@@ -7,6 +7,7 @@ import com.example.lastpi.Entity.Role;
 import com.example.lastpi.Entity.User;
 import com.example.lastpi.Enum.ERole;
 import com.example.lastpi.Enum.Gender;
+import com.example.lastpi.Repo.PasswordResetTokenRepository;
 import com.example.lastpi.Repo.RoleRepo;
 import com.example.lastpi.Repo.UserRepo;
 import com.example.lastpi.Response.JwtResponse;
@@ -14,10 +15,14 @@ import com.example.lastpi.Response.MessageResponse;
 import com.example.lastpi.Security.JWT.JwtUtils;
 import com.example.lastpi.Security.Service.UserDetailsImpl;
 import com.example.lastpi.ServiceIMp.EmailService;
+import com.example.lastpi.ServiceIMp.EmailService1;
+import com.example.lastpi.ServiceIMp.PasswordResetService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.crossstore.ChangeSetPersister;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -52,6 +57,16 @@ public class AuthController {
     JwtUtils jwtUtils;
     @Autowired
     EmailService emailService;
+    @Autowired
+    EmailService1 emailService1;
+    @Autowired
+    private PasswordResetTokenRepository passwordResetTokenRepository;
+    private final PasswordResetService passwordResetService;
+
+    @Autowired
+    public AuthController(PasswordResetService passwordResetService) {
+        this.passwordResetService = passwordResetService;
+    }
 
 
     @Operation(description = "signin")
@@ -135,4 +150,30 @@ public class AuthController {
 
         return ResponseEntity.ok(new MessageResponse("Inscription réussie. Veuillez vérifier votre email pour activer votre compte."));
 
-    }}
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@RequestParam("email") String email) throws ChangeSetPersister.NotFoundException {
+        User user = userRepository.findByEmail(email);
+        if (user == null) {
+            return ResponseEntity.badRequest().body("User not found");
+        }
+
+        // Generate and save password reset token
+        String token = passwordResetService.generatePasswordResetToken(user);
+        if (token == null) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to generate reset token");
+        }
+
+        // Send password reset email
+        if (!passwordResetService.sendPasswordResetEmail(user, token)) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Failed to send reset email");
+        }
+
+        return ResponseEntity.ok("Password reset email sent successfully");
+    }
+
+
+
+
+}

@@ -2,6 +2,7 @@ package com.example.lastpi.Entity;
 
 
 import com.example.lastpi.Enum.Gender;
+import com.example.lastpi.Enum.ServiceType;
 import com.example.lastpi.Enum.Status;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
@@ -49,9 +50,18 @@ public class User {
     @JsonIgnore
     @Column @Enumerated(EnumType.STRING)
     private Status status;
+    private String imgUrl;
+
+    @JsonIgnore
+    @ManyToMany
+    @JoinTable(name = "user_services",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "service_id"))
+    private Set<Services> services = new HashSet<>();
+    private Set<ServiceType> selectedServices = new HashSet<>();
 
 
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.LAZY,cascade = CascadeType.PERSIST)
     @JoinTable(  name = "user_roles",
             joinColumns = @JoinColumn(name = "user_id"),
             inverseJoinColumns = @JoinColumn(name = "role_id"))
@@ -92,6 +102,9 @@ public class User {
         this.email = email;
         this.password = password;
     }
+
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL)
+    private PasswordResetToken passwordResetToken;
 
 
 

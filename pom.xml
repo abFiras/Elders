@@ -101,6 +101,15 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-websocket</artifactId>
         </dependency>
+        <!-- https://mvnrepository.com/artifact/org.tensorflow/tensorflow-core-api -->
+        <dependency>
+            <groupId>org.tensorflow</groupId>
+            <artifactId>tensorflow-core-api</artifactId>
+            <version>0.5.0</version>
+        </dependency>
+
+
+
     </dependencies>
 
     <build>

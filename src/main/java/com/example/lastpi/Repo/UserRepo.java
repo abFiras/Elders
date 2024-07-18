@@ -2,11 +2,14 @@ package com.example.lastpi.Repo;
 
 
 
+import com.example.lastpi.Entity.Role;
 import com.example.lastpi.Entity.User;
 import com.example.lastpi.Enum.Status;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -34,4 +37,7 @@ public interface UserRepo extends JpaRepository<User,String> {
 
 
     User findIdByUsername(String username);
+
+
+    User findByEmail(String email);
 }

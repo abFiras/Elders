@@ -1,0 +1,82 @@
+@Override
+    public User updateUserById(long id, User updatedUser, MultipartFile file) throws IOException {
+        Optional<User> userOptional = userRepository.findById(String.valueOf(id));
+
+        if (userOptional.isPresent()) {
+            User existingUser = userOptional.get();
+            if (file != null && !file.isEmpty()) {
+                String fileName = StringUtils.cleanPath(file.getOriginalFilename());
+                Path targetLocation = Paths.get("file1-storage-path").toAbsolutePath().normalize();
+
+                // Ensure directory exists
+                if (!Files.exists(targetLocation)) {
+                    Files.createDirectories(targetLocation);
+                }
+
+                // Resolve the file path
+                targetLocation = targetLocation.resolve(fileName);
+
+                // Copy file to the target location (Replacing existing file with the same name)
+                Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+
+                // Set the bannerData path
+                existingUser.setBannerData(targetLocation.toString());
+            } else {
+                throw new IllegalArgumentException("File must not be empty.");
+            }
+
+            existingUser.setFirstName(updatedUser.getFirstName());
+            existingUser.setEmail(updatedUser.getEmail());
+            existingUser.setPassword(updatedUser.getPassword());
+            existingUser.setGender(updatedUser.getGender());
+            existingUser.setRoles(updatedUser.getRoles());
+            existingUser.setPhone(updatedUser.getPhone());
+            existingUser.setLasteName(updatedUser.getLasteName());
+            // Update other fields as needed
+            return userRepository.save(existingUser);
+        } else {
+            // Handle user not found
+            return null;
+        }
+    }
+
+     public byte[] getUserBannerById(Long id) throws Exception {
+            User user = userRepository.findById(String.valueOf(id))
+                    .orElseThrow(() -> new Exception("user not found"));
+            Path imagePath = Paths.get(user.getBannerData());
+            if (!Files.exists(imagePath)) {
+                throw new Exception("Image file not found");
+            }
+            return Files.readAllBytes(imagePath);
+
+        }
+
+
+         @PutMapping("/UpdateUser/{id}")
+            public ResponseEntity<User>  updateUserById(@PathVariable long id, @RequestPart("user") User user ,@RequestPart(value = "file", required = false) MultipartFile file) {
+                try {
+                    User updateUserById = adminServices.updateUserById(id,user,file);
+                    return ResponseEntity.ok(updateUserById);
+                }catch (IOException e) {
+                    return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(null);
+                } catch (RuntimeException e) {
+                    return ResponseEntity.notFound().build();
+                }
+            }
+
+
+              @GetMapping("/userBanner/{id}")
+                public ResponseEntity<byte[]> getUserBanner(@PathVariable("id") Long id) {
+                    try {
+                        byte[] image = adminServices.getUserBannerById(id);
+                        if (image == null || image.length == 0) {
+                            return ResponseEntity.notFound().build();
+                        }
+                        String contentType = "image/jpeg"; // This could be dynamic
+                        return ResponseEntity.ok()
+                                .contentType(MediaType.parseMediaType(contentType))
+                                .body(image);
+                    } catch (Exception e) {
+                        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+                    }
+                }
